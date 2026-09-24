@@ -1,0 +1,87 @@
+<p align="center"><img src="assets/logo-1024.png" width="112" alt="Bustelo app icon"></p>
+<h1 align="center">Bustelo</h1>
+<p align="center">Keep your Mac awake and your status Available.</p>
+<p align="center"><a href="https://github.com/swlittles/Bustelo/actions/workflows/ci.yml"><img src="https://github.com/swlittles/Bustelo/actions/workflows/ci.yml/badge.svg" alt="Build and tests"></a> · macOS 13+ · Swift + AppKit · MIT</p>
+
+Bustelo is a small menu-bar app with two jobs:
+
+1. **Keep the Mac awake.** The display stays on and the Mac won't idle sleep while a session runs.
+2. **Keep Teams and Slack from marking you Away.** They go Away after a few minutes without keyboard or mouse input. Bustelo resets that idle timer without clicking, typing, or moving the pointer.
+
+It's a focused take on [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704): one menu, a few durations, nothing else. No account, no analytics, no network access.
+
+## Use it
+
+Click the cup in the menu bar.
+
+| Menu item | What it does |
+| --- | --- |
+| Turn On / Turn Off | Keep the Mac awake until you turn it off |
+| Turn On For ▸ | 15 minutes to 8 hours; the menu shows when the session ends |
+| Keep Teams & Slack Active | Reset the idle timer while a session runs (on by default) |
+| Turn On When Bustelo Opens | Start a session at launch; pair with Open at Login |
+| Open at Login | Launch Bustelo when you log in |
+
+The cup is filled while a session is running.
+
+## How "stay active" works, and why it's safe
+
+Teams and Slack read the system idle time, which is seconds since the last keyboard or mouse input. Keeping the screen on doesn't reset it, so Amphetamine-style power assertions alone still leave you Away.
+
+Bustelo resets it with a **no-op modifier event**: a "modifier keys changed" event reporting exactly the modifiers already held, which is normally none. The window server counts it as input, but no key goes down, no text is typed, and the pointer never moves or clicks. Apps see that nothing changed. The pointer never moves, so hover tooltips, video controls, and auto-hidden cursors stay as they are.
+
+Bustelo also sends it only when it can't get in your way:
+
+- **Only after 60 seconds without real input.** While you're working it does nothing. Teams goes Away after 5 minutes and Slack after 10, so 60 seconds leaves plenty of margin.
+- **Never while a mouse button is held**, so it can't interfere with a click or drag.
+- **Never while the screen is locked.** If you lock your Mac, it's fine for apps to show you as away.
+- **Never while the display is asleep or the screen saver is running**, so it won't wake a screen you turned off on purpose.
+- **Never while another user owns the screen** (fast user switching).
+
+The menu shows when Bustelo is paused for one of these reasons.
+
+We tested several approaches before choosing this one:
+
+| Approach | Resets the idle time Slack/Teams read? | Side effects |
+| --- | --- | --- |
+| Power assertion only (Amphetamine, `caffeinate`) | No | — |
+| `IOPMAssertionDeclareUserActivity` | No | — |
+| Event sent only to Bustelo's own process | No (resets the HID counter only) | — |
+| Mouse move to the pointer's current position | Yes | Delivered to the app under the pointer; can reveal hidden cursors and video controls |
+| **No-op modifier event (Bustelo)** | **Yes** | **None observed** |
+
+Sending events requires **Accessibility** permission. Bustelo asks the first time it needs it; you can also enable it under **System Settings → Privacy & Security → Accessibility**. Bustelo never reads your input. It only checks how long you've been idle.
+
+## Install
+
+Download the latest `Bustelo-…-macos-universal.dmg` from **[Releases](https://github.com/swlittles/Bustelo/releases)**, open it, and drag **Bustelo** into **Applications**. Releases are universal (Apple Silicon and Intel), signed with Developer ID, and notarized by Apple.
+
+## Build from source
+
+Requires macOS 13+ and the Xcode Command Line Tools (full Xcode isn't needed).
+
+```sh
+bash scripts/test.sh        # logic tests
+bash scripts/build.sh       # dist/Bustelo Dev.app (ad-hoc signed, separate bundle ID)
+open "dist/Bustelo Dev.app"
+```
+
+Ad-hoc builds change identity on every rebuild, so macOS may ask you to re-enable Accessibility afterwards.
+
+To test the nudge without waiting a minute:
+
+```sh
+"dist/Bustelo Dev.app/Contents/MacOS/Bustelo Dev" -StartOnLaunch YES -NudgeAfterSeconds 5
+```
+
+### Releasing
+
+Bump `VERSION` and `BUILD_NUMBER`, add a matching `## x.y.z` section to `CHANGELOG.md`, then push a `vX.Y.Z` tag. The Release workflow tests, builds a universal app, signs it with Developer ID, notarizes and staples the app and DMG, and publishes a GitHub release. It needs these repository secrets: `DEVELOPER_ID_P12_BASE64`, `DEVELOPER_ID_P12_PASSWORD`, plus either `NOTARY_APPLE_ID` + `NOTARY_APP_PASSWORD` or `NOTARY_API_KEY_P8` + `NOTARY_KEY_ID` + `NOTARY_ISSUER_ID`.
+
+## Be considerate
+
+Bustelo keeps your status accurate when you're reading, on a call on another device, or stepping away briefly. Check your workplace's policies before using it to appear available when you aren't.
+
+## License
+
+MIT. Named after the coffee; not affiliated with or endorsed by Café Bustelo, Microsoft, Slack, or the makers of Amphetamine.
