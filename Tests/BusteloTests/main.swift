@@ -9,10 +9,13 @@ func expect(_ condition: Bool, _ message: String, line: Int = #line) {
 let start = Date(timeIntervalSince1970: 1_000_000)
 let open = Session(startedAt: start, duration: nil)
 expect(open.endsAt == nil, "open-ended session has no end")
+expect(open.duration == nil, "open-ended session remembers no duration")
 expect(!open.hasEnded(at: start.addingTimeInterval(365 * 86_400)), "open-ended session never ends")
 expect(open.remaining(at: start) == nil, "open-ended session has no remaining time")
 
 let hour = Session(startedAt: start, duration: 3600)
+expect(hour.duration == 3600, "session remembers the picked duration")
+expect(hour.endsAt == start.addingTimeInterval(3600), "end derives from start and duration")
 expect(hour.remaining(at: start.addingTimeInterval(600)) == 3000, "remaining counts down")
 expect(!hour.hasEnded(at: start.addingTimeInterval(3599)), "not ended just before the end")
 expect(hour.hasEnded(at: start.addingTimeInterval(3600)), "ended exactly at the end")
@@ -29,6 +32,10 @@ expect(RemainingFormat.short(0) == "1m", "zero still reads 1m")
 // Presets
 expect(DurationPreset.all.map(\.seconds) == DurationPreset.all.map(\.seconds).sorted(), "presets ascend")
 expect(DurationPreset.all.first?.seconds == 15 * 60 && DurationPreset.all.last?.seconds == 8 * 3600, "preset range")
+
+expect(DurationPreset.index(of: nil) == nil, "indefinite matches no timed preset")
+expect(DurationPreset.index(of: 3600) == 2, "a picked preset is found for its checkmark")
+expect(DurationPreset.index(of: 3599) == nil, "other lengths match nothing")
 
 // Nudge policy
 let policy = NudgePolicy(idleThreshold: 60)

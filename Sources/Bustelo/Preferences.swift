@@ -8,7 +8,8 @@ final class Preferences {
         static let simulateActivity = "SimulateActivity"
         static let startOnLaunch = "StartOnLaunch"
         static let nudgeAfterSeconds = "NudgeAfterSeconds"
-        static let resumeSession = "ResumeSessionEndingAt"
+        static let resumeStartedAt = "ResumeSessionStartedAt"
+        static let resumeDuration = "ResumeSessionDuration"
     }
 
     private let defaults: UserDefaults
@@ -36,16 +37,18 @@ final class Preferences {
         min(240, max(5, defaults.double(forKey: Key.nudgeAfterSeconds)))
     }
 
-    /// A session interrupted by an update relaunch: `.some(nil)` means open-ended.
-    /// Reading it clears it, so a session resumes at most once.
-    func takeResumableSession() -> Date?? {
-        guard let value = defaults.object(forKey: Key.resumeSession) as? Double else { return nil }
-        defaults.removeObject(forKey: Key.resumeSession)
-        return .some(value == 0 ? nil : Date(timeIntervalSince1970: value))
+    /// A session interrupted by an update relaunch. Reading it clears it,
+    /// so a session resumes at most once.
+    func takeResumableSession() -> Session? {
+        defer { [Key.resumeStartedAt, Key.resumeDuration].forEach(defaults.removeObject) }
+        guard let started = defaults.object(forKey: Key.resumeStartedAt) as? Double else { return nil }
+        let duration = defaults.double(forKey: Key.resumeDuration)
+        return Session(startedAt: Date(timeIntervalSince1970: started), duration: duration > 0 ? duration : nil)
     }
 
-    func saveResumableSession(endingAt endsAt: Date?) {
-        defaults.set(endsAt?.timeIntervalSince1970 ?? 0, forKey: Key.resumeSession)
+    func saveResumableSession(_ session: Session) {
+        defaults.set(session.startedAt.timeIntervalSince1970, forKey: Key.resumeStartedAt)
+        defaults.set(session.duration ?? 0, forKey: Key.resumeDuration)
     }
 
     var openAtLogin: Bool { SMAppService.mainApp.status == .enabled }

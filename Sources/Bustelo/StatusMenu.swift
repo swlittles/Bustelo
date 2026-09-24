@@ -40,9 +40,14 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.addItem(controller.isActive
             ? action("Turn Off", #selector(turnOff))
             : action("Turn On", #selector(turnOn)))
+        // While on, the checkmark shows how long this session lasts.
+        let session = controller.session
         let durations = NSMenu()
+        durations.addItem(toggle("Indefinitely", session != nil && session?.duration == nil, #selector(turnOn)))
+        durations.addItem(.separator())
+        let checked = DurationPreset.index(of: session?.duration)
         for (index, preset) in DurationPreset.all.enumerated() {
-            let entry = action(preset.title, #selector(turnOnForPreset(_:)))
+            let entry = toggle(preset.title, index == checked, #selector(turnOnForPreset(_:)))
             entry.tag = index
             durations.addItem(entry)
         }

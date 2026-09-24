@@ -21,16 +21,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusMenu = StatusMenu(controller: controller, preferences: preferences, updates: updates)
         updates.onWillRelaunch = { [weak self] in
             guard let self, let session = self.controller.session else { return }
-            self.preferences.saveResumableSession(endingAt: session.endsAt)
+            self.preferences.saveResumableSession(session)
         }
         updates.start()
-        if let resumed = preferences.takeResumableSession() {
+        if let interrupted = preferences.takeResumableSession(), !interrupted.hasEnded(at: Date()) {
             // Continue a session that an update relaunch interrupted.
-            if let endsAt = resumed {
-                if endsAt > Date() { controller.start(duration: endsAt.timeIntervalSinceNow) }
-            } else {
-                controller.start(duration: nil)
-            }
+            controller.resume(interrupted)
         } else if preferences.startOnLaunch {
             controller.start(duration: nil)
         }

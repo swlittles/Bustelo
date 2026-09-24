@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- New Indefinitely option under Keep Awake For. While Bustelo is on, a checkmark shows how long the session lasts: Indefinitely when you use Turn On, or the length you picked.
+- Picking another length switches the running session over; picking the checked length again restarts its timer.
+- A session resumed after an update keeps its original length and end time.
+
 ## 1.1.0
 
 - Automatic updates. Bustelo checks GitHub once a day for signed, notarized releases. A new version shows as a dot on the cup and an "Update to Bustelo…" item in the menu, and you choose when to install it.

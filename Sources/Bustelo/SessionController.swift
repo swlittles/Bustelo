@@ -26,7 +26,13 @@ final class SessionController {
 
     /// Starts (or restarts) a session. `nil` keeps the Mac awake until stopped.
     func start(duration: TimeInterval?) {
-        session = Session(duration: duration)
+        resume(Session(duration: duration))
+    }
+
+    /// Runs an existing session, e.g. one interrupted by an update relaunch.
+    func resume(_ session: Session) {
+        guard !session.hasEnded(at: Date()) else { return stop() }
+        self.session = session
         assertion.acquire(reason: "Bustelo is keeping this Mac awake")
         ticker?.invalidate()
         // Checking every few seconds keeps idle time within a few seconds of the threshold.

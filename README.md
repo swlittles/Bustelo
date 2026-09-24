@@ -17,7 +17,7 @@ Click the cup in the menu bar.
 | Menu item | What it does |
 | --- | --- |
 | Turn On / Turn Off | Keep the Mac awake until you turn it off |
-| Turn On For ▸ | 15 minutes to 8 hours; the menu shows when the session ends |
+| Turn On For ▸ | Indefinitely, or 15 minutes to 8 hours. While on, it's titled Keep Awake For and a checkmark shows the current length |
 | Keep Teams & Slack Active | Reset the idle timer while a session runs (on by default) |
 | Turn On When Bustelo Opens | Start a session at launch; pair with Open at Login |
 | Open at Login | Launch Bustelo when you log in |
