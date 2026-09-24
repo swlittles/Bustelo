@@ -56,7 +56,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.addItem(durationItem)
         menu.addItem(.separator())
 
-        menu.addItem(toggle("Keep Teams & Slack Active", preferences.simulateActivity, #selector(toggleSimulateActivity)))
+        menu.addItem(toggle("Stay Active", preferences.simulateActivity, #selector(toggleSimulateActivity)))
         menu.addItem(toggle("Turn On When Bustelo Opens", preferences.startOnLaunch, #selector(toggleStartOnLaunch)))
         menu.addItem(toggle("Open at Login", preferences.openAtLogin, #selector(toggleOpenAtLogin)))
         if UpdateService.isEnabled {
@@ -117,12 +117,12 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private func activityText() -> String {
         guard controller.isActive, preferences.simulateActivity else { return "" }
         switch controller.lastDecision {
-        case .skip(.noPermission): return "Needs Accessibility access to keep you Available"
-        case .skip(.screenLocked): return "Status paused while the screen is locked"
-        case .skip(.displayAsleep): return "Status paused while the display sleeps"
-        case .skip(.screenSaver): return "Status paused during the screen saver"
-        case .skip(.notOnConsole): return "Status paused while another user is active"
-        default: return "Keeping Teams & Slack Available"
+        case .skip(.noPermission): return "Needs Accessibility access to stay active"
+        case .skip(.screenLocked): return "Activity paused while the screen is locked"
+        case .skip(.displayAsleep): return "Activity paused while the display sleeps"
+        case .skip(.screenSaver): return "Activity paused during the screen saver"
+        case .skip(.notOnConsole): return "Activity paused while another user is active"
+        default: return "Staying active"
         }
     }
 
@@ -190,7 +190,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     @objc private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
-        let credits = NSMutableAttributedString(string: "Keeps your Mac awake and your status Available.\n", attributes: [.font: NSFont.systemFont(ofSize: 11)])
+        let credits = NSMutableAttributedString(string: "Keeps your Mac awake and active.\n", attributes: [.font: NSFont.systemFont(ofSize: 11)])
         credits.append(NSAttributedString(string: "github.com/swlittles/Bustelo", attributes: [
             .font: NSFont.systemFont(ofSize: 11), .link: URL(string: "https://github.com/swlittles/Bustelo")!]))
         credits.setAlignment(.center, range: NSRange(location: 0, length: credits.length))

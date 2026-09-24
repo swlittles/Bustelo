@@ -22,7 +22,7 @@ enum SkipReason: Equatable {
     case noPermission
     /// Another user owns the console (fast user switching).
     case notOnConsole
-    /// Respect a deliberate lock; apps may rightly show you as away.
+    /// Respect a deliberate lock; a locked Mac should count as idle.
     case screenLocked
     /// The display was slept on purpose; input could wake it.
     case displayAsleep

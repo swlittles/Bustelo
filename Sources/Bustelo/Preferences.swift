@@ -19,7 +19,7 @@ final class Preferences {
         defaults.register(defaults: [Key.simulateActivity: true, Key.startOnLaunch: false, Key.nudgeAfterSeconds: 60])
     }
 
-    /// Keep Teams and Slack from marking you Away while a session runs.
+    /// Reset the system idle timer while a session runs.
     var simulateActivity: Bool {
         get { defaults.bool(forKey: Key.simulateActivity) }
         set { defaults.set(newValue, forKey: Key.simulateActivity) }
@@ -30,7 +30,7 @@ final class Preferences {
         set { defaults.set(newValue, forKey: Key.startOnLaunch) }
     }
 
-    /// Idle time before a nudge. Teams goes Away after 5 minutes and Slack after 10,
+    /// Idle time before a nudge. Idle checks typically wait several minutes,
     /// so the default leaves plenty of margin. Hidden setting for testing:
     /// `defaults write io.github.swlittles.Bustelo NudgeAfterSeconds 30`.
     var nudgeAfterSeconds: TimeInterval {

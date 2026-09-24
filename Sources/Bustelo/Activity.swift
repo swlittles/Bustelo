@@ -4,8 +4,7 @@ import CoreGraphics
 enum SystemState {
     private static let anyInput = CGEventType(rawValue: ~0)!
 
-    /// Seconds since the last input event of any kind. Chromium/Electron apps
-    /// (Slack) and Teams read this same combined-session counter.
+    /// Seconds since the last input event of any kind, as apps checking for idleness see it.
     static var idleSeconds: TimeInterval {
         CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: anyInput)
     }
@@ -30,7 +29,7 @@ enum SystemState {
 /// The event is a modifier-state change whose modifiers equal the ones already
 /// held (normally none), so no key is pressed, no text is typed, and the pointer
 /// never moves or clicks. The window server still counts it as input, which
-/// resets the idle time that Teams and Slack use to mark you Away.
+/// resets the system idle time.
 enum ActivityNudger {
     static var hasPermission: Bool { CGPreflightPostEventAccess() }
 
