@@ -8,7 +8,7 @@ Bustelo is a small menu-bar app with two jobs:
 1. **Keep the Mac awake.** The display stays on and the Mac won't idle sleep while a session runs.
 2. **Keep Teams and Slack from marking you Away.** They go Away after a few minutes without keyboard or mouse input. Bustelo resets that idle timer without clicking, typing, or moving the pointer.
 
-It's a focused take on [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704): one menu, a few durations, nothing else. No account, no analytics, no network access.
+It's a focused take on [Amphetamine](https://apps.apple.com/app/amphetamine/id937984704): one menu, a few durations, nothing else. No account and no analytics. The only network request is the update check to GitHub, which you can turn off.
 
 ## Use it
 
@@ -21,8 +21,10 @@ Click the cup in the menu bar.
 | Keep Teams & Slack Active | Reset the idle timer while a session runs (on by default) |
 | Turn On When Bustelo Opens | Start a session at launch; pair with Open at Login |
 | Open at Login | Launch Bustelo when you log in |
+| Check for Updates Automatically | Check GitHub daily for a new release (on by default) |
+| Check for Updates… | Check now, and install when you're ready |
 
-The cup is filled while a session is running.
+The cup is filled while a session is running. A small dot on it means an update is ready. Bustelo never interrupts you with an update window. If a session is running when you install an update, it resumes after the relaunch.
 
 ## How "stay active" works, and why it's safe
 
@@ -56,6 +58,8 @@ Sending events requires **Accessibility** permission. Bustelo asks the first tim
 
 Download the latest `Bustelo-…-macos-universal.dmg` from **[Releases](https://github.com/swlittles/Bustelo/releases)**, open it, and drag **Bustelo** into **Applications**. Releases are universal (Apple Silicon and Intel), signed with Developer ID, and notarized by Apple.
 
+From 1.1.0 on, Bustelo updates itself through [Sparkle](https://sparkle-project.org). The update feed and every download are signed, and each update is verified before it's installed. Version 1.0.0 has no updater, so install 1.1.0 manually once.
+
 ## Build from source
 
 Requires macOS 13+ and the Xcode Command Line Tools (full Xcode isn't needed).
@@ -76,7 +80,7 @@ To test the nudge without waiting a minute:
 
 ### Releasing
 
-Bump `VERSION` and `BUILD_NUMBER`, add a matching `## x.y.z` section to `CHANGELOG.md`, then push a `vX.Y.Z` tag. The Release workflow tests, builds a universal app, signs it with Developer ID, notarizes and staples the app and DMG, and publishes a GitHub release. It needs these repository secrets: `DEVELOPER_ID_P12_BASE64`, `DEVELOPER_ID_P12_PASSWORD`, plus either `NOTARY_APPLE_ID` + `NOTARY_APP_PASSWORD` or `NOTARY_API_KEY_P8` + `NOTARY_KEY_ID` + `NOTARY_ISSUER_ID`.
+Bump `VERSION` and `BUILD_NUMBER`, add a matching `## x.y.z` section to `CHANGELOG.md`, then push a `vX.Y.Z` tag. The Release workflow tests, builds a universal app, signs it with Developer ID, notarizes and staples the app and DMG, signs the Sparkle appcast, and publishes a GitHub release. It needs these repository secrets: `DEVELOPER_ID_P12_BASE64`, `DEVELOPER_ID_P12_PASSWORD`, `SPARKLE_ED_PRIVATE_KEY`, plus either `NOTARY_APPLE_ID` + `NOTARY_APP_PASSWORD` or `NOTARY_API_KEY_P8` + `NOTARY_KEY_ID` + `NOTARY_ISSUER_ID`.
 
 ## Be considerate
 
@@ -84,4 +88,4 @@ Bustelo keeps your status accurate when you're reading, on a call on another dev
 
 ## License
 
-MIT. Named after the coffee; not affiliated with or endorsed by Café Bustelo, Microsoft, Slack, or the makers of Amphetamine.
+MIT. Includes [Sparkle](https://github.com/sparkle-project/Sparkle) (MIT; see `docs/THIRD_PARTY_NOTICES.txt`). Named after the coffee; not affiliated with or endorsed by Café Bustelo, Microsoft, Slack, or the makers of Amphetamine.

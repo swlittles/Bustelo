@@ -34,10 +34,25 @@ if [ "${BUSTELO_UNIVERSAL:-0}" = "1" ]; then
     lipo -create .build/distribution-arm64/release/Bustelo .build/distribution-x86_64/release/Bustelo \
         -output "$APP/Contents/MacOS/$APP_NAME"
     lipo "$APP/Contents/MacOS/$APP_NAME" -verify_arch arm64 x86_64
+    FRAMEWORK_SOURCE=.build/distribution-arm64/release/Sparkle.framework
 else
     swift build -c release
     cp .build/release/Bustelo "$APP/Contents/MacOS/$APP_NAME"
+    FRAMEWORK_SOURCE=.build/release/Sparkle.framework
 fi
+
+# Sparkle's framework is already universal; embed it and sign its helpers inside-out.
+mkdir -p "$APP/Contents/Frameworks"
+ditto "$FRAMEWORK_SOURCE" "$APP/Contents/Frameworks/Sparkle.framework"
+FRAMEWORK="$APP/Contents/Frameworks/Sparkle.framework"
+SIGN_ARGS=(--force --sign "$IDENTITY")
+if [ "$IDENTITY" != - ]; then SIGN_ARGS+=(--options runtime --timestamp); fi
+for component in "$FRAMEWORK/Versions/B/Autoupdate" \
+    "$FRAMEWORK/Versions/B/Updater.app" \
+    "$FRAMEWORK/Versions/B/XPCServices/Downloader.xpc" \
+    "$FRAMEWORK/Versions/B/XPCServices/Installer.xpc" "$FRAMEWORK"; do
+    codesign "${SIGN_ARGS[@]}" "$component"
+done
 
 ICON_DIR="$PWD/assets"
 if [ "$VARIANT" = development ]; then
@@ -45,7 +60,19 @@ if [ "$VARIANT" = development ]; then
     swift scripts/make-icon.swift "$ICON_DIR" --development
     iconutil -c icns "$ICON_DIR/Bustelo.iconset" -o "$ICON_DIR/Bustelo.icns"
 fi
-cp "$ICON_DIR/Bustelo.icns" "$APP/Contents/Resources/"
+cp "$ICON_DIR/Bustelo.icns" docs/THIRD_PARTY_NOTICES.txt "$APP/Contents/Resources/"
+# Only release builds get an update feed; development builds never check for updates.
+UPDATE_KEYS=""
+if [ "$VARIANT" = production ]; then
+    UPDATE_KEYS="<key>SUFeedURL</key><string>https://github.com/swlittles/Bustelo/releases/latest/download/appcast.xml</string>
+<key>SUPublicEDKey</key><string>COeL5WubKML8Vo8pShkYXPA0MRWSsJiYsXd3P2RvR24=</string>
+<key>SUEnableAutomaticChecks</key><true/>
+<key>SUAutomaticallyUpdate</key><false/>
+<key>SUAllowsAutomaticUpdates</key><false/>
+<key>SUEnableSystemProfiling</key><false/>
+<key>SUVerifyUpdateBeforeExtraction</key><true/>
+<key>SURequireSignedFeed</key><true/>"
+fi
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -63,6 +90,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <key>LSUIElement</key><true/>
 <key>NSHighResolutionCapable</key><true/>
 <key>NSHumanReadableCopyright</key><string>© 2026 Stephen Little. MIT License.</string>
+$UPDATE_KEYS
 </dict></plist>
 PLIST
 if [ "$IDENTITY" = "-" ]; then

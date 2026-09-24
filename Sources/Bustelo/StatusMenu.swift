@@ -5,18 +5,21 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private let menu = NSMenu()
     private let controller: SessionController
     private let preferences: Preferences
+    private let updates: UpdateService
     private let statusLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let activityLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private var liveTimer: Timer?
 
-    init(controller: SessionController, preferences: Preferences) {
+    init(controller: SessionController, preferences: Preferences, updates: UpdateService) {
         self.controller = controller
         self.preferences = preferences
+        self.updates = updates
         super.init()
         menu.delegate = self
         menu.autoenablesItems = false
         item.menu = menu
         controller.onChange = { [weak self] in self?.refreshIcon() }
+        updates.onAvailabilityChange = { [weak self] in self?.refreshIcon() }
         refreshIcon()
     }
 
@@ -51,9 +54,17 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.addItem(toggle("Keep Teams & Slack Active", preferences.simulateActivity, #selector(toggleSimulateActivity)))
         menu.addItem(toggle("Turn On When Bustelo Opens", preferences.startOnLaunch, #selector(toggleStartOnLaunch)))
         menu.addItem(toggle("Open at Login", preferences.openAtLogin, #selector(toggleOpenAtLogin)))
+        if UpdateService.isEnabled {
+            menu.addItem(toggle("Check for Updates Automatically", updates.automaticChecks, #selector(toggleAutomaticChecks)))
+        }
         menu.addItem(.separator())
 
         menu.addItem(action("About Bustelo", #selector(showAbout)))
+        if UpdateService.isEnabled {
+            let check = action(updates.menuTitle, #selector(checkForUpdates))
+            check.isEnabled = updates.canCheck
+            menu.addItem(check)
+        }
         let quit = NSMenuItem(title: "Quit Bustelo", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quit)
     }
@@ -110,11 +121,29 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     private func refreshIcon() {
         let active = controller.isActive
-        let image = NSImage(systemSymbolName: active ? "cup.and.saucer.fill" : "cup.and.saucer",
-                            accessibilityDescription: active ? "Bustelo: awake" : "Bustelo: off")
+        let update = updates.availableVersion != nil
+        var description = active ? "Bustelo: awake" : "Bustelo: off"
+        if update { description += ", update available" }
+        let symbol = NSImage(systemSymbolName: active ? "cup.and.saucer.fill" : "cup.and.saucer",
+                             accessibilityDescription: description)
+        let image = update ? symbol.map(Self.withUpdateDot) : symbol
         image?.isTemplate = true
         item.button?.image = image
-        item.button?.toolTip = active ? "Bustelo is keeping your Mac awake" : "Bustelo is off"
+        item.button?.toolTip = (active ? "Bustelo is keeping your Mac awake" : "Bustelo is off")
+            + (update ? " · Update available" : "")
+    }
+
+    /// Adds a small dot to the top-right corner, like an unread badge.
+    private static func withUpdateDot(_ symbol: NSImage) -> NSImage {
+        let size = NSSize(width: symbol.size.width + 3, height: symbol.size.height)
+        let image = NSImage(size: size, flipped: false) { rect in
+            symbol.draw(in: NSRect(x: 0, y: 0, width: symbol.size.width, height: symbol.size.height))
+            NSColor.black.setFill()
+            NSBezierPath(ovalIn: NSRect(x: rect.maxX - 5, y: rect.maxY - 5, width: 5, height: 5)).fill()
+            return true
+        }
+        image.accessibilityDescription = symbol.accessibilityDescription
+        return image
     }
 
     // MARK: Actions
@@ -145,6 +174,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             alert.runModal()
         }
     }
+
+    @objc private func toggleAutomaticChecks() { updates.automaticChecks.toggle() }
+
+    @objc private func checkForUpdates() { updates.checkForUpdates() }
 
     @objc private func requestPermission() { ActivityNudger.requestPermission() }
 

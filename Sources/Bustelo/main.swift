@@ -7,6 +7,7 @@ if CommandLine.arguments.contains("--version") {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let preferences = Preferences.shared
+    private let updates = UpdateService()
     private var controller: SessionController!
     private var statusMenu: StatusMenu!
 
@@ -17,8 +18,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         controller = SessionController(preferences: preferences)
-        statusMenu = StatusMenu(controller: controller, preferences: preferences)
-        if preferences.startOnLaunch { controller.start(duration: nil) }
+        statusMenu = StatusMenu(controller: controller, preferences: preferences, updates: updates)
+        updates.onWillRelaunch = { [weak self] in
+            guard let self, let session = self.controller.session else { return }
+            self.preferences.saveResumableSession(endingAt: session.endsAt)
+        }
+        updates.start()
+        if let resumed = preferences.takeResumableSession() {
+            // Continue a session that an update relaunch interrupted.
+            if let endsAt = resumed {
+                if endsAt > Date() { controller.start(duration: endsAt.timeIntervalSinceNow) }
+            } else {
+                controller.start(duration: nil)
+            }
+        } else if preferences.startOnLaunch {
+            controller.start(duration: nil)
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {

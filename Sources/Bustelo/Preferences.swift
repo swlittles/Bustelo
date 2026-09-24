@@ -8,6 +8,7 @@ final class Preferences {
         static let simulateActivity = "SimulateActivity"
         static let startOnLaunch = "StartOnLaunch"
         static let nudgeAfterSeconds = "NudgeAfterSeconds"
+        static let resumeSession = "ResumeSessionEndingAt"
     }
 
     private let defaults: UserDefaults
@@ -33,6 +34,18 @@ final class Preferences {
     /// `defaults write io.github.swlittles.Bustelo NudgeAfterSeconds 30`.
     var nudgeAfterSeconds: TimeInterval {
         min(240, max(5, defaults.double(forKey: Key.nudgeAfterSeconds)))
+    }
+
+    /// A session interrupted by an update relaunch: `.some(nil)` means open-ended.
+    /// Reading it clears it, so a session resumes at most once.
+    func takeResumableSession() -> Date?? {
+        guard let value = defaults.object(forKey: Key.resumeSession) as? Double else { return nil }
+        defaults.removeObject(forKey: Key.resumeSession)
+        return .some(value == 0 ? nil : Date(timeIntervalSince1970: value))
+    }
+
+    func saveResumableSession(endingAt endsAt: Date?) {
+        defaults.set(endsAt?.timeIntervalSince1970 ?? 0, forKey: Key.resumeSession)
     }
 
     var openAtLogin: Bool { SMAppService.mainApp.status == .enabled }

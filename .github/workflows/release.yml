@@ -46,11 +46,17 @@ jobs:
         run: bash scripts/ci-signing.sh
       - name: Build, sign, notarize, and package
         run: bash scripts/release.sh signed
+      - name: Generate signed update feed
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: bash scripts/update-feed.sh
       - name: Preserve verified release assets
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: signed-macos-release
-          path: release-assets/Bustelo-*
+          path: |
+            release-assets/Bustelo-*
+            release-assets/appcast.xml
           if-no-files-found: error
       - name: Publish GitHub Release
         env:
