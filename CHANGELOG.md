@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- Icons next to About Bustelo and Check for Updates. When an update is ready, its item shows a download arrow.
+
 ## 1.2.0
 
 - New Indefinitely option under Keep Awake For. While Bustelo is on, a checkmark shows how long the session lasts: Indefinitely when you use Turn On, or the length you picked.

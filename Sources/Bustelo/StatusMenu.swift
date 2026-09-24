@@ -64,9 +64,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         }
         menu.addItem(.separator())
 
-        menu.addItem(action("About Bustelo", #selector(showAbout)))
+        menu.addItem(action("About Bustelo", #selector(showAbout), symbol: "info.circle"))
         if UpdateService.isEnabled {
-            let check = action(updates.menuTitle, #selector(checkForUpdates))
+            let check = action(updates.menuTitle, #selector(checkForUpdates),
+                               symbol: updates.availableVersion == nil ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
             check.isEnabled = updates.canCheck
             menu.addItem(check)
         }
@@ -86,9 +87,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         liveTimer = nil
     }
 
-    private func action(_ title: String, _ selector: Selector) -> NSMenuItem {
+    private func action(_ title: String, _ selector: Selector, symbol: String? = nil) -> NSMenuItem {
         let entry = NSMenuItem(title: title, action: selector, keyEquivalent: "")
         entry.target = self
+        entry.image = symbol.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) }
         return entry
     }
 
