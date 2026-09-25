@@ -41,11 +41,7 @@ if [ "$MODE" = signed ]; then
     spctl --assess --type execute --verbose=2 "$APP"
 fi
 
-# Plain drag-to-Applications disk image.
-mkdir "$WORK/dmg"
-ditto "$APP" "$WORK/dmg/Bustelo.app"
-ln -s /Applications "$WORK/dmg/Applications"
-hdiutil create -volname Bustelo -srcfolder "$WORK/dmg" -fs HFS+ -format UDZO -ov "$WORK/$NAME.dmg" >/dev/null
+bash scripts/package-dmg.sh "$APP" "$WORK/$NAME.dmg" "$MODE"
 if [ "$MODE" = signed ]; then
     codesign --timestamp --sign "$BUSTELO_SIGNING_IDENTITY" "$WORK/$NAME.dmg"
     notarize "$WORK/$NAME.dmg"

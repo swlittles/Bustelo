@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.3
+
+- A new installer window. The disk image opens to a Bustelo-styled layout with a clear arrow to drag Bustelo into Applications.
+
 ## 1.2.2
 
 - Simpler menu wording. The activity option is now called Stay Active.
