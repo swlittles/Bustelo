@@ -3,5 +3,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p .build
-swiftc Sources/Bustelo/Session.swift Sources/Bustelo/NudgePolicy.swift Tests/BusteloTests/main.swift -o .build/bustelo-tests
+swiftc Sources/Bustelo/Session.swift Sources/Bustelo/NudgePolicy.swift Sources/Bustelo/Battery.swift \
+    Sources/LidHelperInterface/LidHelperInterface.swift Tests/BusteloTests/main.swift -o .build/bustelo-tests
 .build/bustelo-tests

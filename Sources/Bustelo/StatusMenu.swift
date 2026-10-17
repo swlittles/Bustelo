@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 final class StatusMenu: NSObject, NSMenuDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -8,6 +9,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private let updates: UpdateService
     private let statusLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let activityLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+    private let lidLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private var liveTimer: Timer?
 
     init(controller: SessionController, preferences: Preferences, updates: UpdateService) {
@@ -30,10 +32,15 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         refreshLines()
         statusLine.isEnabled = false
         activityLine.isEnabled = false
+        lidLine.isEnabled = false
         menu.addItem(statusLine)
         if !activityLine.title.isEmpty { menu.addItem(activityLine) }
+        if !lidLine.title.isEmpty { menu.addItem(lidLine) }
         if preferences.simulateActivity && !ActivityNudger.hasPermission {
             menu.addItem(action("Allow Accessibility Access…", #selector(requestPermission)))
+        }
+        if preferences.preventLidSleep && controller.lidSleep.needsApproval {
+            menu.addItem(action("Allow in Login Items…", #selector(openLoginItems)))
         }
         menu.addItem(.separator())
 
@@ -57,6 +64,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         menu.addItem(toggle("Stay Active", preferences.simulateActivity, #selector(toggleSimulateActivity)))
+        menu.addItem(toggle("Stay Awake With Lid Closed", preferences.preventLidSleep, #selector(togglePreventLidSleep)))
         menu.addItem(toggle("Turn On When Bustelo Opens", preferences.startOnLaunch, #selector(toggleStartOnLaunch)))
         menu.addItem(toggle("Open at Login", preferences.openAtLogin, #selector(toggleOpenAtLogin)))
         if UpdateService.isEnabled {
@@ -103,6 +111,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private func refreshLines() {
         statusLine.title = statusText()
         activityLine.title = activityText()
+        lidLine.title = lidText()
     }
 
     private func statusText() -> String {
@@ -124,6 +133,17 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         case .skip(.notOnConsole): return "Activity paused while another user is active"
         default: return "Staying active"
         }
+    }
+
+    private func lidText() -> String {
+        guard controller.isActive, preferences.preventLidSleep else { return "" }
+        let lid = controller.lidSleep
+        if lid.needsApproval { return "Needs approval in Login Items to stay awake with the lid closed" }
+        if !LidSleepPolicy.staysAwake(.current) {
+            return "Battery below \(LidSleepPolicy.minimumBattery)%: closing the lid sleeps the Mac"
+        }
+        if lid.lastRequestFailed { return "Couldn’t keep awake with the lid closed" }
+        return lid.isHeld ? "Staying awake with the lid closed" : ""
     }
 
     private func refreshIcon() {
@@ -168,6 +188,24 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         if preferences.simulateActivity && !ActivityNudger.hasPermission { ActivityNudger.requestPermission() }
         controller.refresh()
     }
+
+    @objc private func togglePreventLidSleep() {
+        preferences.preventLidSleep.toggle()
+        if preferences.preventLidSleep {
+            do {
+                try controller.lidSleep.install()
+            } catch {
+                preferences.preventLidSleep = false
+                NSApp.activate(ignoringOtherApps: true)
+                let alert = NSAlert(error: error)
+                alert.messageText = "Bustelo couldn’t set up Stay Awake With Lid Closed"
+                alert.runModal()
+            }
+        }
+        controller.refresh()
+    }
+
+    @objc private func openLoginItems() { SMAppService.openSystemSettingsLoginItems() }
 
     @objc private func toggleStartOnLaunch() { preferences.startOnLaunch.toggle() }
 

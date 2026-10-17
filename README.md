@@ -19,6 +19,7 @@ Click the cup in the menu bar.
 | Turn On / Turn Off | Keep the Mac awake until you turn it off |
 | Turn On For ▸ | Indefinitely, or 15 minutes to 8 hours. While on, it's titled Keep Awake For and a checkmark shows the current length |
 | Stay Active | Reset the idle timer while a session runs (on by default) |
+| Stay Awake With Lid Closed | Keep a MacBook awake with the lid closed while a session runs, even on battery and without an external display |
 | Turn On When Bustelo Opens | Start a session at launch; pair with Open at Login |
 | Open at Login | Launch Bustelo when you log in |
 | Check for Updates Automatically | Check GitHub daily for a new release (on by default) |
@@ -53,6 +54,20 @@ We tested several approaches before choosing this one:
 | **No-op modifier event (Bustelo)** | **Yes** | **None observed** |
 
 Sending events requires **Accessibility** permission. Bustelo asks the first time it needs it; you can also enable it under **System Settings → Privacy & Security → Accessibility**. Bustelo never reads your input. It only checks how long you've been idle.
+
+## How Stay Awake With Lid Closed works
+
+macOS sleeps a MacBook when the lid closes, whatever power assertions are held, unless it's in clamshell mode (power, an external display, and an external keyboard or mouse). The only switch that covers every case is `pmset disablesleep`, and it needs root.
+
+So Bustelo includes a small helper, `BusteloLidHelper`, that launchd runs as root. The first time you turn the option on, macOS asks you to allow Bustelo under **System Settings → General → Login Items**. After that:
+
+- **Only while a session runs.** Bustelo asks the helper to set `disablesleep` when a session starts and lets go when it ends.
+- **Quitting or crashing restores lid sleep.** The helper keeps the setting only while Bustelo stays connected, so a closed connection turns it back off. If the Mac loses power or the helper itself stops, it restores the setting the next time it starts.
+- **Low battery lets it sleep.** On battery at 20% or less, closing the lid sleeps the Mac again, so a closed MacBook can't run itself flat. Plugging in turns the option back on.
+- **Your own setting is left alone.** If `disablesleep` was already on before Bustelo asked, the helper doesn't turn it off.
+- **Only Bustelo can use it.** The helper accepts connections only from Bustelo signed by the same Developer ID team.
+
+While it's on, the Mac doesn't sleep at all, including from the Apple menu, so turn Bustelo off before putting a closed MacBook in a bag rather than relying on the battery cutoff.
 
 ## Install
 

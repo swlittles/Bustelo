@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0
+
+- New Stay Awake With Lid Closed option. While a session runs, closing a MacBook's lid no longer sleeps it, even on battery and without an external display. The first time, macOS asks you to allow Bustelo in Login Items.
+- Quitting Bustelo, ending the session, or a crash restores normal lid sleep. So does running on battery at 20% or less, until you plug in.
+
 ## 1.2.3
 
 - A new installer window. The disk image opens to a Bustelo-styled layout with a clear arrow to drag Bustelo into Applications.

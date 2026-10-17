@@ -7,6 +7,7 @@ final class Preferences {
     private enum Key {
         static let simulateActivity = "SimulateActivity"
         static let startOnLaunch = "StartOnLaunch"
+        static let preventLidSleep = "PreventLidSleep"
         static let nudgeAfterSeconds = "NudgeAfterSeconds"
         static let resumeStartedAt = "ResumeSessionStartedAt"
         static let resumeDuration = "ResumeSessionDuration"
@@ -16,7 +17,8 @@ final class Preferences {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        defaults.register(defaults: [Key.simulateActivity: true, Key.startOnLaunch: false, Key.nudgeAfterSeconds: 60])
+        defaults.register(defaults: [Key.simulateActivity: true, Key.startOnLaunch: false,
+                                      Key.preventLidSleep: false, Key.nudgeAfterSeconds: 60])
     }
 
     /// Reset the system idle timer while a session runs.
@@ -28,6 +30,12 @@ final class Preferences {
     var startOnLaunch: Bool {
         get { defaults.bool(forKey: Key.startOnLaunch) }
         set { defaults.set(newValue, forKey: Key.startOnLaunch) }
+    }
+
+    /// Keep the Mac awake with the lid closed while a session runs.
+    var preventLidSleep: Bool {
+        get { defaults.bool(forKey: Key.preventLidSleep) }
+        set { defaults.set(newValue, forKey: Key.preventLidSleep) }
     }
 
     /// Idle time before a nudge. Idle checks typically wait several minutes,

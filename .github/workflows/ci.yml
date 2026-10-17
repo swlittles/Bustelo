@@ -33,6 +33,9 @@ jobs:
           codesign --verify --deep --strict "$app"
           executable=$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$app/Contents/Info.plist")
           lipo "$app/Contents/MacOS/$executable" -verify_arch arm64 x86_64
+          lipo "$app/Contents/MacOS/BusteloLidHelper" -verify_arch arm64 x86_64
+          test "$(/usr/libexec/PlistBuddy -c 'Print Label' "$app/Contents/Library/LaunchDaemons/$bundle.LidHelper.plist")" = "$bundle.LidHelper"
+          codesign -dv "$app/Contents/MacOS/BusteloLidHelper" 2>&1 | grep -Fxq "Identifier=$bundle.LidHelper"
           test "$("$app/Contents/MacOS/$executable" --version)" = "$(cat VERSION)"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist")" = "$bundle"
           test -d "$app/Contents/Frameworks/Sparkle.framework"

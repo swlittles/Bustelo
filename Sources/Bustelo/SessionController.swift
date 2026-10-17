@@ -1,6 +1,6 @@
 import AppKit
 
-/// Owns the running session: the power assertion, the expiry, and idle nudges.
+/// Owns the running session: the power assertion, lid sleep, the expiry, and idle nudges.
 final class SessionController {
     private(set) var session: Session?
     /// Outcome of the most recent check, shown in the menu.
@@ -9,6 +9,7 @@ final class SessionController {
 
     private let preferences: Preferences
     private let assertion = PowerAssertion()
+    let lidSleep = LidSleepGuard()
     private var ticker: Timer?
     private var wakeObserver: NSObjectProtocol?
 
@@ -51,6 +52,7 @@ final class SessionController {
         ticker?.invalidate()
         ticker = nil
         assertion.release()
+        lidSleep.hold(false)
         onChange?()
     }
 
@@ -60,6 +62,7 @@ final class SessionController {
     private func tick() {
         guard let session else { return }
         if session.hasEnded(at: Date()) { return stop() }
+        lidSleep.hold(preferences.preventLidSleep && LidSleepPolicy.staysAwake(.current))
         guard preferences.simulateActivity else { lastDecision = nil; return }
         let decision = NudgePolicy(idleThreshold: preferences.nudgeAfterSeconds).decide(SystemState.snapshot())
         if decision == .nudge { ActivityNudger.nudge() }

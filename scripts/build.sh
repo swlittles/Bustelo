@@ -12,6 +12,8 @@ case "$VARIANT" in
     *) echo 'BUSTELO_BUILD_VARIANT must be development or production.' >&2; exit 1 ;;
 esac
 DESTINATION="$OUTPUT_DIR/$APP_NAME.app"
+HELPER=BusteloLidHelper
+HELPER_LABEL="$BUNDLE_ID.LidHelper"
 VERSION=$(cat VERSION)
 BUILD_NUMBER=$(cat BUILD_NUMBER)
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid VERSION" >&2; exit 1; }
@@ -33,11 +35,15 @@ if [ "${BUSTELO_UNIVERSAL:-0}" = "1" ]; then
     done
     lipo -create .build/distribution-arm64/release/Bustelo .build/distribution-x86_64/release/Bustelo \
         -output "$APP/Contents/MacOS/$APP_NAME"
+    lipo -create ".build/distribution-arm64/release/$HELPER" ".build/distribution-x86_64/release/$HELPER" \
+        -output "$APP/Contents/MacOS/$HELPER"
     lipo "$APP/Contents/MacOS/$APP_NAME" -verify_arch arm64 x86_64
+    lipo "$APP/Contents/MacOS/$HELPER" -verify_arch arm64 x86_64
     FRAMEWORK_SOURCE=.build/distribution-arm64/release/Sparkle.framework
 else
     swift build -c release
     cp .build/release/Bustelo "$APP/Contents/MacOS/$APP_NAME"
+    cp ".build/release/$HELPER" "$APP/Contents/MacOS/$HELPER"
     FRAMEWORK_SOURCE=.build/release/Sparkle.framework
 fi
 
@@ -53,6 +59,21 @@ for component in "$FRAMEWORK/Versions/B/Autoupdate" \
     "$FRAMEWORK/Versions/B/XPCServices/Installer.xpc" "$FRAMEWORK"; do
     codesign "${SIGN_ARGS[@]}" "$component"
 done
+
+# The lid helper runs as root through launchd once the user allows it in Login Items.
+mkdir -p "$APP/Contents/Library/LaunchDaemons"
+cat > "$APP/Contents/Library/LaunchDaemons/$HELPER_LABEL.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>Label</key><string>$HELPER_LABEL</string>
+<key>BundleProgram</key><string>Contents/MacOS/$HELPER</string>
+<key>MachServices</key><dict><key>$HELPER_LABEL</key><true/></dict>
+<key>RunAtLoad</key><true/>
+<key>AssociatedBundleIdentifiers</key><array><string>$BUNDLE_ID</string></array>
+</dict></plist>
+PLIST
+codesign "${SIGN_ARGS[@]}" --identifier "$HELPER_LABEL" "$APP/Contents/MacOS/$HELPER"
 
 ICON_DIR="$PWD/assets"
 if [ "$VARIANT" = development ]; then
